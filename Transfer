@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vantage Peak - Transfer</title>
+    <style>
+        :root { --primary: #0f172a; --accent: #fbbf24; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; background: var(--bg); color: #1e293b; }
+        .header { background: var(--primary); color: white; padding: 25px; text-align: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .content { padding: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .tab { padding: 10px 20px; background: white; border-radius: 20px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; }
+        .tab.active { background: var(--primary); color: white; }
+        .transfer-card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; color: #64748b; text-transform: uppercase; }
+        input, select { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; background: #fdfdfd; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-top: 10px; cursor: pointer; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #e2e8f0; z-index: 100; }
+        .nav-item { text-align: center; color: #94a3b8; text-decoration: none; font-size: 0.75rem; cursor: pointer; border: none; background: none; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 25px; backdrop-filter: blur(5px); }
+        .modal { background: white; padding: 35px 25px; border-radius: 24px; text-align: center; width: 100%; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="overlay"><div class="modal"><div class="loader"></div><p id="status-text">Verifying Security Protocols...</p></div></div>
+
+    <div class="header">
+        <div style="color: var(--accent); font-size: 0.7rem; letter-spacing: 2px;">VANTAGE PEAK</div>
+        <div style="font-weight: bold; font-size: 1.1rem; margin-top: 5px;">Payment Center</div>
+    </div>
+
+    <div class="content">
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('local')">Domestic (USA)</div>
+            <div class="tab" onclick="showTab('international')">International</div>
+            <div class="tab" onclick="showTab('bills')">Bill Pay</div>
+        </div>
+
+        <!-- LOCAL -->
+        <div id="local-section" class="transfer-card">
+            <div class="form-group"><label>Bank</label><select id="l-bank"><option>JPMorgan Chase</option><option>Bank of America</option><option>Citigroup</option><option>Wells Fargo</option><option>Goldman Sachs</option><option>Morgan Stanley</option><option>U.S. Bancorp</option><option>PNC Financial Services</option><option>Truist Financial</option><option>Charles Schwab</option><option>TD Bank</option><option>Capital One</option><option>BNY Mellon</option><option>State Street</option><option>American Express</option></select></div>
+            <div class="form-group"><label>Account Number</label><input type="text" id="l-acc" placeholder="Recipient account"></div>
+            <div class="form-group"><label>Routing Number</label><input type="text" id="l-route" placeholder="9 Digits"></div>
+            <div class="form-group"><label>Amount ($)</label><input type="number" id="l-amt" placeholder="0.00"></div>
+            <button class="btn-primary" onclick="validateLocal()">Send Money</button>
+        </div>
+
+        <!-- INTERNATIONAL -->
+        <div id="international-section" class="transfer-card hidden">
+            <div class="form-group"><label>Full Name</label><input type="text" id="i-name" placeholder="Beneficiary name"></div>
+            <div class="form-group"><label>Recipient Bank</label><input type="text" id="i-bank" placeholder="Bank name"></div>
+            <div class="form-group"><label>Swift Code (Optional)</label><input type="text" id="i-swift" placeholder="SWIFT/BIC"></div>
+            <div class="form-group"><label>IBAN / Account</label><input type="text" id="i-iban" placeholder="International number"></div>
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:2;"><label>Amount</label><input type="number" id="i-amt"></div>
+                <div class="form-group" style="flex:1.5;"><label>Currency</label><select id="i-curr"><option>PLN (Poland)</option><option>SGD (Singapore)</option><option>TWD (Taiwan)</option><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option><option>CAD</option><option>AUD</option><option>CHF</option><option>CNY</option><option>HKD</option><option>NZD</option><option>SEK</option><option>ZAR</option></select></div>
+            </div>
+            <button class="btn-primary" onclick="validateInternational()">Initiate Global Wire</button>
+        </div>
+
+        <!-- BILL PAY -->
+        <div id="bills-section" class="transfer-card hidden">
+            <div class="form-group"><label>Payee Name</label><input type="text" id="b-payee" placeholder="e.g. AT&T"></div>
+            <div class="form-group"><label>Bill Account</label><input type="text" id="b-acc"></div>
+            <div class="form-group"><label>Amount ($)</label><input type="number" id="b-amt"></div>
+            <button class="btn-primary" onclick="validateBills()">Pay Bill</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item" onclick="goTo('dashboard.html')"><span class="nav-icon">🏠</span>Home</button>
+        <button class="nav-item active" onclick="goTo('transfer.html')"><span class="nav-icon">💸</span>Transfer</button>
+        <button class="nav-item" onclick="goTo('settings.html')"><span class="nav-icon">⚙️</span>Settings</button>
+        <button class="nav-item" onclick="location.href='index.html'" style="color:#ef4444;"><span class="nav-icon">⏻</span>Logout</button>
+    </nav>
+
+    <script>
+        function showTab(type) {
+            document.querySelectorAll('.transfer-card').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(type + '-section').classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+        }
+
+        function validateLocal() {
+            if(!document.getElementById('l-acc').value || !document.getElementById('l-route').value || !document.getElementById('l-amt').value) {
+                alert("Please fill all required fields to continue.");
+            } else { processAction('local'); }
+        }
+
+        function validateInternational() {
+            if(!document.getElementById('i-name').value || !document.getElementById('i-bank').value || !document.getElementById('i-iban').value || !document.getElementById('i-amt').value) {
+                alert("Please fill all required beneficiary details.");
+            } else { processAction('int'); }
+        }
+
+        function validateBills() {
+            if(!document.getElementById('b-payee').value || !document.getElementById('b-acc').value || !document.getElementById('b-amt').value) {
+                alert("Please enter payee details and amount.");
+            } else { processAction('local'); }
+        }
+
